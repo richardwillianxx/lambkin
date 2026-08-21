@@ -2,6 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@prisma/engines': true
+  prisma: true
   unrs-resolver: false
 minimumReleaseAgeExclude:
   - '@rolldown/binding-darwin-x64@1.2.5'

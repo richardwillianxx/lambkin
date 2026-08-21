@@ -1,0 +1,414 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model audit_logs {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  user_id     Int?     @db.UnsignedInt
+  action      String   @db.VarChar(80)
+  entity_type String?  @db.VarChar(60)
+  entity_id   Int?     @db.UnsignedInt
+  metadata    Json?
+  ip_address  String?  @db.VarChar(45)
+  created_at  DateTime @default(now())
+  users       users?   @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_audit_logs_user")
+
+  @@index([action, created_at], map: "idx_audit_logs_action_created")
+  @@index([entity_type, entity_id, created_at], map: "idx_audit_logs_entity_created")
+  @@index([user_id, created_at], map: "idx_audit_logs_user_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model congregations {
+  id            Int             @id @default(autoincrement()) @db.UnsignedInt
+  name          String          @db.VarChar(150)
+  street        String?         @db.VarChar(150)
+  number        String?         @db.VarChar(20)
+  complement    String?         @db.VarChar(100)
+  district      String?         @db.VarChar(100)
+  city          String?         @db.VarChar(100)
+  state         String?         @db.Char(2)
+  zip_code      String?         @db.Char(8)
+  status        String          @default("A") @db.Char(1)
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @default(now())
+  people        people[]
+  posts         posts[]
+  quiz_attempts quiz_attempts[]
+  recitatives   recitatives[]
+
+  @@index([name], map: "idx_congregations_name")
+  @@index([status], map: "idx_congregations_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model image_authorizations {
+  id                                                          Int      @id @default(autoincrement()) @db.UnsignedInt
+  person_id                                                   Int      @unique(map: "uq_image_authorizations_person") @db.UnsignedInt
+  authorized_by_person_id                                     Int      @db.UnsignedInt
+  terms_version                                               String   @db.VarChar(30)
+  accepted_at                                                 DateTime
+  status                                                      String   @default("A") @db.Char(1)
+  created_at                                                  DateTime @default(now())
+  updated_at                                                  DateTime @default(now())
+  people_image_authorizations_authorized_by_person_idTopeople people   @relation("image_authorizations_authorized_by_person_idTopeople", fields: [authorized_by_person_id], references: [id], onUpdate: Restrict, map: "fk_image_authorizations_authorized_by")
+  people_image_authorizations_person_idTopeople               people   @relation("image_authorizations_person_idTopeople", fields: [person_id], references: [id], onUpdate: Restrict, map: "fk_image_authorizations_person")
+
+  @@index([authorized_by_person_id], map: "fk_image_authorizations_authorized_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model media {
+  id                  Int          @id @default(autoincrement()) @db.UnsignedInt
+  uploaded_by_user_id Int          @db.UnsignedInt
+  storage_key         String       @unique(map: "uq_media_storage_key") @db.VarChar(500)
+  original_filename   String       @db.VarChar(255)
+  mime_type           String       @db.VarChar(100)
+  size_bytes          Int          @db.UnsignedInt
+  status              String       @default("A") @db.Char(1)
+  created_at          DateTime     @default(now())
+  updated_at          DateTime     @default(now())
+  users               users        @relation(fields: [uploaded_by_user_id], references: [id], onUpdate: Restrict, map: "fk_media_uploaded_by")
+  post_media          post_media[]
+
+  @@index([uploaded_by_user_id, status], map: "idx_media_uploaded_by_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model people {
+  id                                                                        Int                    @id @default(autoincrement()) @db.UnsignedInt
+  congregation_id                                                           Int                    @db.UnsignedInt
+  role                                                                      people_role
+  gender                                                                    people_gender
+  full_name                                                                 String                 @db.VarChar(180)
+  preferred_name                                                            String                 @unique(map: "uq_people_preferred_name") @db.VarChar(80)
+  birth_date                                                                DateTime               @db.Date
+  email                                                                     String?                @unique(map: "uq_people_email") @db.VarChar(254)
+  whatsapp                                                                  String?                @unique(map: "uq_people_whatsapp") @db.VarChar(20)
+  street                                                                    String?                @db.VarChar(150)
+  number                                                                    String?                @db.VarChar(20)
+  complement                                                                String?                @db.VarChar(100)
+  district                                                                  String?                @db.VarChar(100)
+  city                                                                      String?                @db.VarChar(100)
+  state                                                                     String?                @db.Char(2)
+  zip_code                                                                  String?                @db.Char(8)
+  notes                                                                     String?                @db.Text
+  status                                                                    String                 @default("A") @db.Char(1)
+  created_at                                                                DateTime               @default(now())
+  updated_at                                                                DateTime               @default(now())
+  image_authorizations_image_authorizations_authorized_by_person_idTopeople image_authorizations[] @relation("image_authorizations_authorized_by_person_idTopeople")
+  image_authorizations_image_authorizations_person_idTopeople               image_authorizations?  @relation("image_authorizations_person_idTopeople")
+  congregations                                                             congregations          @relation(fields: [congregation_id], references: [id], onUpdate: Restrict, map: "fk_people_congregation")
+  person_guardians_person_guardians_child_person_idTopeople                 person_guardians[]     @relation("person_guardians_child_person_idTopeople")
+  person_guardians_person_guardians_guardian_person_idTopeople              person_guardians[]     @relation("person_guardians_guardian_person_idTopeople")
+  userAccount                                                               users?                 @relation("users_person_idTopeople")
+  verificationUsers                                                         users[]                @relation("users_verification_person_idTopeople")
+
+  @@index([congregation_id, status], map: "idx_people_congregation_status")
+  @@index([full_name], map: "idx_people_full_name")
+  @@index([role, status], map: "idx_people_role_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model person_guardians {
+  id                                                 Int                           @id @default(autoincrement()) @db.UnsignedInt
+  child_person_id                                    Int                           @db.UnsignedInt
+  guardian_person_id                                 Int                           @db.UnsignedInt
+  relationship                                       person_guardians_relationship
+  status                                             String                        @default("A") @db.Char(1)
+  created_at                                         DateTime                      @default(now())
+  updated_at                                         DateTime                      @default(now())
+  people_person_guardians_child_person_idTopeople    people                        @relation("person_guardians_child_person_idTopeople", fields: [child_person_id], references: [id], onUpdate: Restrict, map: "fk_person_guardians_child")
+  people_person_guardians_guardian_person_idTopeople people                        @relation("person_guardians_guardian_person_idTopeople", fields: [guardian_person_id], references: [id], onUpdate: Restrict, map: "fk_person_guardians_guardian")
+
+  @@unique([child_person_id, guardian_person_id], map: "uq_person_guardians_relationship")
+  @@index([child_person_id, status], map: "idx_person_guardians_child_status")
+  @@index([guardian_person_id, status], map: "idx_person_guardians_guardian_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model post_media {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  post_id    Int      @db.UnsignedInt
+  media_id   Int      @db.UnsignedInt
+  position   Int      @db.UnsignedSmallInt
+  status     String   @default("A") @db.Char(1)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  media      media    @relation(fields: [media_id], references: [id], onUpdate: Restrict, map: "fk_post_media_media")
+  posts      posts    @relation(fields: [post_id], references: [id], onUpdate: Restrict, map: "fk_post_media_post")
+
+  @@unique([post_id, media_id], map: "uq_post_media")
+  @@index([media_id], map: "fk_post_media_media")
+  @@index([post_id, status, position], map: "idx_post_media_post_status_position")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model post_reactions {
+  id            Int                          @id @default(autoincrement()) @db.UnsignedInt
+  post_id       Int                          @db.UnsignedInt
+  user_id       Int                          @db.UnsignedInt
+  reaction_type post_reactions_reaction_type
+  status        String                       @default("A") @db.Char(1)
+  created_at    DateTime                     @default(now())
+  updated_at    DateTime                     @default(now())
+  posts         posts                        @relation(fields: [post_id], references: [id], onUpdate: Restrict, map: "fk_post_reactions_post")
+  users         users                        @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "fk_post_reactions_user")
+
+  @@unique([post_id, user_id], map: "uq_post_reactions_user_post")
+  @@index([post_id, status], map: "idx_post_reactions_post_status")
+  @@index([user_id, status], map: "idx_post_reactions_user_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model posts {
+  id              Int              @id @default(autoincrement()) @db.UnsignedInt
+  author_user_id  Int              @db.UnsignedInt
+  congregation_id Int?             @db.UnsignedInt
+  caption         String?          @db.Text
+  status          String           @default("A") @db.Char(1)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @default(now())
+  post_media      post_media[]
+  post_reactions  post_reactions[]
+  users           users            @relation(fields: [author_user_id], references: [id], onUpdate: Restrict, map: "fk_posts_author")
+  congregations   congregations?   @relation(fields: [congregation_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_posts_congregation")
+
+  @@index([author_user_id, status, created_at], map: "idx_posts_author_status_created")
+  @@index([congregation_id, status, created_at], map: "idx_posts_congregation_status_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quiz_answers {
+  id                 Int            @id @default(autoincrement()) @db.UnsignedInt
+  attempt_id         Int            @db.UnsignedInt
+  question_id        Int            @db.UnsignedInt
+  selected_option_id Int            @db.UnsignedInt
+  is_correct         Boolean
+  points_awarded     Int            @default(0) @db.UnsignedSmallInt
+  status             String         @default("A") @db.Char(1)
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @default(now())
+  quiz_attempts      quiz_attempts  @relation(fields: [attempt_id], references: [id], onUpdate: Restrict, map: "fk_quiz_answers_attempt")
+  quiz_questions     quiz_questions @relation(fields: [question_id], references: [id], onUpdate: Restrict, map: "fk_quiz_answers_question")
+  quiz_options       quiz_options   @relation(fields: [selected_option_id], references: [id], onUpdate: Restrict, map: "fk_quiz_answers_selected_option")
+
+  @@unique([attempt_id, question_id], map: "uq_quiz_answers_attempt_question")
+  @@index([question_id], map: "fk_quiz_answers_question")
+  @@index([selected_option_id], map: "fk_quiz_answers_selected_option")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quiz_attempts {
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  quiz_id         Int            @db.UnsignedInt
+  user_id         Int            @db.UnsignedInt
+  congregation_id Int            @db.UnsignedInt
+  score           Int            @db.UnsignedInt
+  correct_answers Int            @db.UnsignedSmallInt
+  total_questions Int            @db.UnsignedSmallInt
+  status          String         @default("A") @db.Char(1)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @default(now())
+  quiz_answers    quiz_answers[]
+  congregations   congregations  @relation(fields: [congregation_id], references: [id], onUpdate: Restrict, map: "fk_quiz_attempts_congregation")
+  quizzes         quizzes        @relation(fields: [quiz_id], references: [id], onUpdate: Restrict, map: "fk_quiz_attempts_quiz")
+  users           users          @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "fk_quiz_attempts_user")
+
+  @@index([congregation_id, status], map: "idx_quiz_attempts_congregation_status")
+  @@index([quiz_id, status, created_at], map: "idx_quiz_attempts_quiz_status_created")
+  @@index([user_id, quiz_id, status], map: "idx_quiz_attempts_user_quiz_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quiz_options {
+  id             Int            @id @default(autoincrement()) @db.UnsignedInt
+  question_id    Int            @db.UnsignedInt
+  option_text    String         @db.VarChar(500)
+  is_correct     Boolean        @default(false)
+  position       Int            @db.UnsignedSmallInt
+  status         String         @default("A") @db.Char(1)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @default(now())
+  quiz_answers   quiz_answers[]
+  quiz_questions quiz_questions @relation(fields: [question_id], references: [id], onUpdate: Restrict, map: "fk_quiz_options_question")
+
+  @@index([question_id, status, position], map: "idx_quiz_options_question_status_position")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quiz_questions {
+  id            Int            @id @default(autoincrement()) @db.UnsignedInt
+  quiz_id       Int            @db.UnsignedInt
+  question_text String         @db.Text
+  points        Int            @default(0) @db.UnsignedSmallInt
+  position      Int            @db.UnsignedSmallInt
+  status        String         @default("A") @db.Char(1)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @default(now())
+  quiz_answers  quiz_answers[]
+  quiz_options  quiz_options[]
+  quizzes       quizzes        @relation(fields: [quiz_id], references: [id], onUpdate: Restrict, map: "fk_quiz_questions_quiz")
+
+  @@index([quiz_id, status, position], map: "idx_quiz_questions_quiz_status_position")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quizzes {
+  id                 Int                @id @default(autoincrement()) @db.UnsignedInt
+  title              String             @db.VarChar(150)
+  description        String?            @db.Text
+  quiz_state         quizzes_quiz_state @default(DRAFT)
+  max_attempts       Int                @default(1) @db.UnsignedSmallInt
+  created_by_user_id Int                @db.UnsignedInt
+  status             String             @default("A") @db.Char(1)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @default(now())
+  quiz_attempts      quiz_attempts[]
+  quiz_questions     quiz_questions[]
+  users              users              @relation(fields: [created_by_user_id], references: [id], onUpdate: Restrict, map: "fk_quizzes_created_by")
+
+  @@index([created_by_user_id, status], map: "idx_quizzes_created_by_status")
+  @@index([quiz_state, status], map: "idx_quizzes_state_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model recitatives {
+  id                 Int                      @id @default(autoincrement()) @db.UnsignedInt
+  name               String                   @db.VarChar(150)
+  group_number       recitatives_group_number
+  bible_book         String                   @db.VarChar(60)
+  bible_chapter      Int                      @db.UnsignedSmallInt
+  bible_verse        String                   @db.VarChar(30)
+  gender             recitatives_gender
+  congregation_id    Int                      @db.UnsignedInt
+  created_by_user_id Int                      @db.UnsignedInt
+  recitative_date    DateTime                 @db.Date
+  after_text         String?                  @db.Text
+  reciters_count     Int?                     @db.UnsignedSmallInt
+  status             String                   @default("A") @db.Char(1)
+  created_at         DateTime                 @default(now())
+  updated_at         DateTime                 @default(now())
+  congregations      congregations            @relation(fields: [congregation_id], references: [id], onUpdate: Restrict, map: "fk_recitatives_congregation")
+  users              users                    @relation(fields: [created_by_user_id], references: [id], onUpdate: Restrict, map: "fk_recitatives_created_by")
+
+  @@index([congregation_id, status, recitative_date], map: "idx_recitatives_congregation_date")
+  @@index([congregation_id, gender, status], map: "idx_recitatives_congregation_gender")
+  @@index([created_by_user_id, status], map: "idx_recitatives_created_by")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_sessions {
+  id                 Int      @id @default(autoincrement()) @db.UnsignedInt
+  user_id            Int      @db.UnsignedInt
+  refresh_token_hash String   @unique(map: "uq_user_sessions_refresh_token_hash") @db.Char(64)
+  expires_at         DateTime
+  status             String   @default("A") @db.Char(1)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now())
+  users              users    @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "fk_user_sessions_user")
+
+  @@index([user_id, status, expires_at], map: "idx_user_sessions_user_status_expires")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_tokens {
+  id         Int                    @id @default(autoincrement()) @db.UnsignedInt
+  user_id    Int                    @db.UnsignedInt
+  token_type user_tokens_token_type
+  token_hash String                 @unique(map: "uq_user_tokens_hash") @db.Char(64)
+  expires_at DateTime
+  used_at    DateTime?
+  attempts   Int                    @default(0) @db.UnsignedTinyInt
+  status     String                 @default("A") @db.Char(1)
+  created_at DateTime               @default(now())
+  updated_at DateTime               @default(now())
+  users      users                  @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "fk_user_tokens_user")
+
+  @@index([user_id, token_type, status, expires_at], map: "idx_user_tokens_user_type_status_expires")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                     Int              @id @default(autoincrement()) @db.UnsignedInt
+  person_id              Int              @unique(map: "uq_users_person") @db.UnsignedInt
+  verification_person_id Int?             @db.UnsignedInt
+  username               String           @unique(map: "uq_users_username") @db.VarChar(80)
+  password_hash          String           @db.VarChar(255)
+  is_system_admin        Boolean          @default(false)
+  email_verified_at      DateTime?
+  whatsapp_verified_at   DateTime?
+  status                 String           @default("A") @db.Char(1)
+  created_at             DateTime         @default(now())
+  updated_at             DateTime         @default(now())
+  audit_logs             audit_logs[]
+  media                  media[]
+  post_reactions         post_reactions[]
+  posts                  posts[]
+  quiz_attempts          quiz_attempts[]
+  quizzes                quizzes[]
+  recitatives            recitatives[]
+  user_sessions          user_sessions[]
+  user_tokens            user_tokens[]
+  person                 people           @relation("users_person_idTopeople", fields: [person_id], references: [id], onUpdate: Restrict, map: "fk_users_person")
+  verificationPerson     people?          @relation("users_verification_person_idTopeople", fields: [verification_person_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_users_verification_person")
+
+  @@index([status], map: "idx_users_status")
+  @@index([verification_person_id], map: "idx_users_verification_person")
+}
+
+enum people_role {
+  MINISTRY
+  ASSISTANT
+  GUARDIAN
+  LAMB
+}
+
+enum recitatives_group_number {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+}
+
+enum user_tokens_token_type {
+  EMAIL_VERIFICATION
+  WHATSAPP_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum people_gender {
+  MALE
+  FEMALE
+}
+
+enum person_guardians_relationship {
+  FATHER
+  MOTHER
+  GRANDFATHER
+  GRANDMOTHER
+  LEGAL_GUARDIAN
+  OTHER
+}
+
+enum post_reactions_reaction_type {
+  HEART
+  CLAP
+}
+
+enum quizzes_quiz_state {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum recitatives_gender {
+  MALE
+  FEMALE
+}
