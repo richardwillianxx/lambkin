@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PeopleUsersModule } from './people-users/people-users.module';
+import { PostsMediaModule } from './posts-media/posts-media.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { PeopleUsersModule } from './people-users/people-users.module';
     }),
     PrismaModule,
     AuthModule,
-    PeopleUsersModule
+    PeopleUsersModule,
+    PostsMediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
