@@ -48,13 +48,9 @@ export class CreateRecitativeDto {
   @Min(1)
   congregationId?: number;
 
-  @Matches(
-    /^\d{4}-\d{2}-\d{2}$/,
-    {
-      message:
-        'recitativeDate deve estar no formato YYYY-MM-DD.',
-    },
-  )
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'recitativeDate deve estar no formato YYYY-MM-DD.',
+  })
   recitativeDate!: string;
 
   @IsOptional()
@@ -97,13 +93,9 @@ export class UpdateRecitativeDto {
   gender?: RecitativeGender;
 
   @IsOptional()
-  @Matches(
-    /^\d{4}-\d{2}-\d{2}$/,
-    {
-      message:
-        'recitativeDate deve estar no formato YYYY-MM-DD.',
-    },
-  )
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'recitativeDate deve estar no formato YYYY-MM-DD.',
+  })
   recitativeDate?: string;
 
   @IsOptional()

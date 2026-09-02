@@ -12,31 +12,18 @@ import {
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AccessTokenPayload } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import {
-  CreatePostDto,
-  UpdatePostDto,
-} from './dto/post.dto';
-import {
-  ReactToPostDto,
-} from './dto/reaction.dto';
+import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
+import { ReactToPostDto } from './dto/reaction.dto';
 import { PostsService } from './posts.service';
 
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
 export class PostsController {
-  constructor(
-    private readonly postsService: PostsService,
-  ) { }
+  constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  create(
-    @CurrentUser() user: AccessTokenPayload,
-    @Body() dto: CreatePostDto,
-  ) {
-    return this.postsService.create(
-      user,
-      dto,
-    );
+  create(@CurrentUser() user: AccessTokenPayload, @Body() dto: CreatePostDto) {
+    return this.postsService.create(user, dto);
   }
 
   @Get()
@@ -45,9 +32,7 @@ export class PostsController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.postsService.findOne(id);
   }
 
@@ -57,11 +42,7 @@ export class PostsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePostDto,
   ) {
-    return this.postsService.update(
-      user,
-      id,
-      dto,
-    );
+    return this.postsService.update(user, id, dto);
   }
 
   @Delete(':id')
@@ -69,10 +50,7 @@ export class PostsController {
     @CurrentUser() user: AccessTokenPayload,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.postsService.remove(
-      user,
-      id,
-    );
+    return this.postsService.remove(user, id);
   }
 
   @Post(':id/reaction')
@@ -81,11 +59,7 @@ export class PostsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReactToPostDto,
   ) {
-    return this.postsService.react(
-      user,
-      id,
-      dto,
-    );
+    return this.postsService.react(user, id, dto);
   }
 
   @Delete(':id/reaction')
@@ -93,9 +67,6 @@ export class PostsController {
     @CurrentUser() user: AccessTokenPayload,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.postsService.removeReaction(
-      user,
-      id,
-    );
+    return this.postsService.removeReaction(user, id);
   }
 }

@@ -9,30 +9,22 @@ import { AuthorizeImageDto } from './dto/image-authorization.dto';
 
 @Injectable()
 export class ImageAuthorizationService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async authorize(
     user: AccessTokenPayload,
     personId: number,
     dto: AuthorizeImageDto,
   ) {
-    const person =
-      await this.ensurePersonExists(personId);
+    const person = await this.ensurePersonExists(personId);
 
-    await this.ensureCanAuthorize(
-      user,
-      personId,
-      person.birth_date,
-    );
+    await this.ensureCanAuthorize(user, personId, person.birth_date);
 
-    const existing =
-      await this.prisma.image_authorizations.findUnique({
-        where: {
-          person_id: personId,
-        },
-      });
+    const existing = await this.prisma.image_authorizations.findUnique({
+      where: {
+        person_id: personId,
+      },
+    });
 
     if (existing) {
       return this.prisma.image_authorizations.update({
@@ -40,10 +32,8 @@ export class ImageAuthorizationService {
           id: existing.id,
         },
         data: {
-          authorized_by_person_id:
-            user.personId,
-          terms_version:
-            dto.termsVersion,
+          authorized_by_person_id: user.personId,
+          terms_version: dto.termsVersion,
           accepted_at: new Date(),
           status: 'A',
         },
@@ -53,69 +43,44 @@ export class ImageAuthorizationService {
     return this.prisma.image_authorizations.create({
       data: {
         person_id: personId,
-        authorized_by_person_id:
-          user.personId,
-        terms_version:
-          dto.termsVersion,
+        authorized_by_person_id: user.personId,
+        terms_version: dto.termsVersion,
         accepted_at: new Date(),
         status: 'A',
       },
     });
   }
 
-  async findOne(
-    user: AccessTokenPayload,
-    personId: number,
-  ) {
-    const person =
-      await this.ensurePersonExists(personId);
+  async findOne(user: AccessTokenPayload, personId: number) {
+    const person = await this.ensurePersonExists(personId);
 
-    await this.ensureCanView(
-      user,
-      personId,
-      person.birth_date,
-    );
+    await this.ensureCanView(user, personId, person.birth_date);
 
-    const authorization =
-      await this.prisma.image_authorizations.findUnique({
-        where: {
-          person_id: personId,
-        },
-      });
+    const authorization = await this.prisma.image_authorizations.findUnique({
+      where: {
+        person_id: personId,
+      },
+    });
 
     if (!authorization) {
-      throw new NotFoundException(
-        'Autorização de imagem não encontrada.',
-      );
+      throw new NotFoundException('Autorização de imagem não encontrada.');
     }
 
     return authorization;
   }
 
-  async revoke(
-    user: AccessTokenPayload,
-    personId: number,
-  ) {
-    const person =
-      await this.ensurePersonExists(personId);
+  async revoke(user: AccessTokenPayload, personId: number) {
+    const person = await this.ensurePersonExists(personId);
 
-    await this.ensureCanAuthorize(
-      user,
-      personId,
-      person.birth_date,
-    );
+    await this.ensureCanAuthorize(user, personId, person.birth_date);
 
-    const authorization =
-      await this.prisma.image_authorizations.findUnique({
-        where: {
-          person_id: personId,
-        },
-      });
+    const authorization = await this.prisma.image_authorizations.findUnique({
+      where: {
+        person_id: personId,
+      },
+    });
 
-    if (
-      !authorization ||
-      authorization.status !== 'A'
-    ) {
+    if (!authorization || authorization.status !== 'A') {
       throw new NotFoundException(
         'Autorização de imagem ativa não encontrada.',
       );
@@ -135,23 +100,15 @@ export class ImageAuthorizationService {
     };
   }
 
-  private async ensurePersonExists(
-    personId: number,
-  ) {
-    const person =
-      await this.prisma.people.findUnique({
-        where: {
-          id: personId,
-        },
-      });
+  private async ensurePersonExists(personId: number) {
+    const person = await this.prisma.people.findUnique({
+      where: {
+        id: personId,
+      },
+    });
 
-    if (
-      !person ||
-      person.status !== 'A'
-    ) {
-      throw new NotFoundException(
-        'Pessoa não encontrada.',
-      );
+    if (!person || person.status !== 'A') {
+      throw new NotFoundException('Pessoa não encontrada.');
     }
 
     return person;
@@ -162,9 +119,7 @@ export class ImageAuthorizationService {
     personId: number,
     birthDate: Date,
   ) {
-    const age = this.calculateAge(
-      birthDate,
-    );
+    const age = this.calculateAge(birthDate);
 
     if (age >= 12) {
       if (user.personId !== personId) {
@@ -176,14 +131,12 @@ export class ImageAuthorizationService {
       return;
     }
 
-    const guardian =
-      await this.prisma.person_guardians.findFirst({
-        where: {
-          child_person_id: personId,
-          guardian_person_id:
-            user.personId,
-        },
-      });
+    const guardian = await this.prisma.person_guardians.findFirst({
+      where: {
+        child_person_id: personId,
+        guardian_person_id: user.personId,
+      },
+    });
 
     if (!guardian) {
       throw new ForbiddenException(
@@ -205,19 +158,15 @@ export class ImageAuthorizationService {
       return;
     }
 
-    const age = this.calculateAge(
-      birthDate,
-    );
+    const age = this.calculateAge(birthDate);
 
     if (age < 12) {
-      const guardian =
-        await this.prisma.person_guardians.findFirst({
-          where: {
-            child_person_id: personId,
-            guardian_person_id:
-              user.personId,
-          },
-        });
+      const guardian = await this.prisma.person_guardians.findFirst({
+        where: {
+          child_person_id: personId,
+          guardian_person_id: user.personId,
+        },
+      });
 
       if (guardian) {
         return;
@@ -229,24 +178,16 @@ export class ImageAuthorizationService {
     );
   }
 
-  private calculateAge(
-    birthDate: Date,
-  ): number {
+  private calculateAge(birthDate: Date): number {
     const today = new Date();
 
-    let age =
-      today.getFullYear() -
-      birthDate.getFullYear();
+    let age = today.getFullYear() - birthDate.getFullYear();
 
-    const monthDifference =
-      today.getMonth() -
-      birthDate.getMonth();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
 
     if (
       monthDifference < 0 ||
-      (monthDifference === 0 &&
-        today.getDate() <
-        birthDate.getDate())
+      (monthDifference === 0 && today.getDate() < birthDate.getDate())
     ) {
       age--;
     }

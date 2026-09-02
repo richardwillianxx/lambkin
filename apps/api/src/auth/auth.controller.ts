@@ -9,23 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type {
-  Request,
-  Response,
-} from 'express';
+import type { Request, Response } from 'express';
 import { AuthCodeService } from './auth-code.service';
 import { AuthService } from './auth.service';
 import type { AccessTokenPayload } from './auth.types';
-import {
-  REFRESH_COOKIE_NAME,
-  REFRESH_TOKEN_TTL_MS,
-} from './auth.utils';
+import { REFRESH_COOKIE_NAME, REFRESH_TOKEN_TTL_MS } from './auth.utils';
 import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
-import {
-  ForgotPasswordDto,
-  ResetPasswordDto,
-} from './dto/password.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 import {
   ResendVerificationDto,
   VerifyAccountDto,
@@ -46,13 +37,9 @@ export class AuthController {
     @Res({ passthrough: true })
     response: Response,
   ) {
-    const result =
-      await this.authService.login(dto);
+    const result = await this.authService.login(dto);
 
-    this.setRefreshCookie(
-      response,
-      result.refreshToken,
-    );
+    this.setRefreshCookie(response, result.refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -66,24 +53,15 @@ export class AuthController {
     @Res({ passthrough: true })
     response: Response,
   ) {
-    const refreshToken =
-      request.cookies?.[REFRESH_COOKIE_NAME];
+    const refreshToken = request.cookies?.[REFRESH_COOKIE_NAME];
 
     if (!refreshToken) {
-      throw new UnauthorizedException(
-        'Refresh token não informado.',
-      );
+      throw new UnauthorizedException('Refresh token não informado.');
     }
 
-    const result =
-      await this.authService.refresh(
-        refreshToken,
-      );
+    const result = await this.authService.refresh(refreshToken);
 
-    this.setRefreshCookie(
-      response,
-      result.refreshToken,
-    );
+    this.setRefreshCookie(response, result.refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -99,16 +77,11 @@ export class AuthController {
     @Res({ passthrough: true })
     response: Response,
   ) {
-    await this.authService.logout(
-      user.sessionId,
-    );
+    await this.authService.logout(user.sessionId);
 
-    response.clearCookie(
-      REFRESH_COOKIE_NAME,
-      {
-        path: '/auth',
-      },
-    );
+    response.clearCookie(REFRESH_COOKIE_NAME, {
+      path: '/auth',
+    });
 
     return {
       message: 'Sessão encerrada.',
@@ -125,54 +98,32 @@ export class AuthController {
   }
 
   @Post('verification/resend')
-  resendVerification(
-    @Body() dto: ResendVerificationDto,
-  ) {
-    return this.authCodeService
-      .resendVerification(dto);
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authCodeService.resendVerification(dto);
   }
 
   @Post('verification/confirm')
-  verifyAccount(
-    @Body() dto: VerifyAccountDto,
-  ) {
-    return this.authCodeService
-      .verifyAccount(dto);
+  verifyAccount(@Body() dto: VerifyAccountDto) {
+    return this.authCodeService.verifyAccount(dto);
   }
 
   @Post('password/forgot')
-  forgotPassword(
-    @Body() dto: ForgotPasswordDto,
-  ) {
-    return this.authCodeService
-      .forgotPassword(dto);
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authCodeService.forgotPassword(dto);
   }
 
   @Post('password/reset')
-  resetPassword(
-    @Body() dto: ResetPasswordDto,
-  ) {
-    return this.authCodeService
-      .resetPassword(dto);
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authCodeService.resetPassword(dto);
   }
 
-  private setRefreshCookie(
-    response: Response,
-    token: string,
-  ) {
-    response.cookie(
-      REFRESH_COOKIE_NAME,
-      token,
-      {
-        httpOnly: true,
-        secure:
-          this.configService.get(
-            'NODE_ENV',
-          ) === 'production',
-        sameSite: 'lax',
-        maxAge: REFRESH_TOKEN_TTL_MS,
-        path: '/auth',
-      },
-    );
+  private setRefreshCookie(response: Response, token: string) {
+    response.cookie(REFRESH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      sameSite: 'lax',
+      maxAge: REFRESH_TOKEN_TTL_MS,
+      path: '/auth',
+    });
   }
 }

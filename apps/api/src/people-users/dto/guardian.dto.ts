@@ -1,7 +1,4 @@
-import {
-  IsIn,
-  IsInt,
-} from 'class-validator';
+import { IsIn, IsInt } from 'class-validator';
 
 export const GUARDIAN_RELATIONSHIPS = [
   'FATHER',
@@ -12,8 +9,7 @@ export const GUARDIAN_RELATIONSHIPS = [
   'OTHER',
 ] as const;
 
-export type GuardianRelationship =
-  (typeof GUARDIAN_RELATIONSHIPS)[number];
+export type GuardianRelationship = (typeof GUARDIAN_RELATIONSHIPS)[number];
 
 export class LinkGuardianDto {
   @IsInt()

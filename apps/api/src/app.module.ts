@@ -26,4 +26,4 @@ import { AdminAuditModule } from './admin-audit/admin-audit.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

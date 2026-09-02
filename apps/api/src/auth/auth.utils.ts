@@ -1,14 +1,8 @@
-import {
-  createHash,
-  createHmac,
-  randomBytes,
-  randomInt,
-} from 'crypto';
+import { createHash, createHmac, randomBytes, randomInt } from 'crypto';
 
 export const REFRESH_COOKIE_NAME = 'lambkin_refresh_token';
 
-export const REFRESH_TOKEN_TTL_MS =
-  30 * 24 * 60 * 60 * 1000;
+export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function generateRefreshToken(): string {
   return randomBytes(48).toString('hex');

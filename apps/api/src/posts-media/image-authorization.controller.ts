@@ -18,54 +18,34 @@ import { ImageAuthorizationService } from './image-authorization.service';
 @UseGuards(JwtAuthGuard)
 export class ImageAuthorizationController {
   constructor(
-    private readonly imageAuthorizationService:
-      ImageAuthorizationService,
-  ) { }
+    private readonly imageAuthorizationService: ImageAuthorizationService,
+  ) {}
 
   @Post(':personId')
   authorize(
     @CurrentUser() user: AccessTokenPayload,
-    @Param(
-      'personId',
-      ParseIntPipe,
-    )
+    @Param('personId', ParseIntPipe)
     personId: number,
     @Body() dto: AuthorizeImageDto,
   ) {
-    return this.imageAuthorizationService.authorize(
-      user,
-      personId,
-      dto,
-    );
+    return this.imageAuthorizationService.authorize(user, personId, dto);
   }
 
   @Get(':personId')
   findOne(
     @CurrentUser() user: AccessTokenPayload,
-    @Param(
-      'personId',
-      ParseIntPipe,
-    )
+    @Param('personId', ParseIntPipe)
     personId: number,
   ) {
-    return this.imageAuthorizationService.findOne(
-      user,
-      personId,
-    );
+    return this.imageAuthorizationService.findOne(user, personId);
   }
 
   @Delete(':personId')
   revoke(
     @CurrentUser() user: AccessTokenPayload,
-    @Param(
-      'personId',
-      ParseIntPipe,
-    )
+    @Param('personId', ParseIntPipe)
     personId: number,
   ) {
-    return this.imageAuthorizationService.revoke(
-      user,
-      personId,
-    );
+    return this.imageAuthorizationService.revoke(user, personId);
   }
 }

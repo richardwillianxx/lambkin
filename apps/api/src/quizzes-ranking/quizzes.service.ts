@@ -6,41 +6,28 @@ import {
 } from '@nestjs/common';
 import type { AccessTokenPayload } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateQuizDto,
-  UpdateQuizDto,
-} from './dto/quiz.dto';
+import { CreateQuizDto, UpdateQuizDto } from './dto/quiz.dto';
 
 @Injectable()
 export class QuizzesService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    user: AccessTokenPayload,
-    dto: CreateQuizDto,
-  ) {
+  async create(user: AccessTokenPayload, dto: CreateQuizDto) {
     await this.ensureCanCreateQuiz(user);
 
     return this.prisma.quizzes.create({
       data: {
         title: dto.title,
-        description:
-          dto.description ?? null,
+        description: dto.description ?? null,
         quiz_state: 'DRAFT',
-        max_attempts:
-          dto.maxAttempts,
-        created_by_user_id:
-          user.sub,
+        max_attempts: dto.maxAttempts,
+        created_by_user_id: user.sub,
         status: 'A',
       },
     });
   }
 
-  async findAll(
-    user: AccessTokenPayload,
-  ) {
+  async findAll(user: AccessTokenPayload) {
     if (user.isSystemAdmin) {
       return this.prisma.quizzes.findMany({
         where: {
@@ -87,8 +74,7 @@ export class QuizzesService {
             quiz_state: 'CLOSED',
           },
           {
-            created_by_user_id:
-              user.sub,
+            created_by_user_id: user.sub,
           },
         ],
       },
@@ -122,22 +108,11 @@ export class QuizzesService {
     });
   }
 
-  async findOne(
-    user: AccessTokenPayload,
-    quizId: number,
-  ) {
-    const quiz =
-      await this.getQuizOrThrow(
-        quizId,
-      );
+  async findOne(user: AccessTokenPayload, quizId: number) {
+    const quiz = await this.getQuizOrThrow(quizId);
 
-    if (
-      quiz.quiz_state === 'DRAFT'
-    ) {
-      await this.ensureCanManageQuiz(
-        user,
-        quiz.created_by_user_id,
-      );
+    if (quiz.quiz_state === 'DRAFT') {
+      await this.ensureCanManageQuiz(user, quiz.created_by_user_id);
 
       return this.prisma.quizzes.findUnique({
         where: {
@@ -228,24 +203,12 @@ export class QuizzesService {
     });
   }
 
-  async update(
-    user: AccessTokenPayload,
-    quizId: number,
-    dto: UpdateQuizDto,
-  ) {
-    const quiz =
-      await this.getQuizOrThrow(
-        quizId,
-      );
+  async update(user: AccessTokenPayload, quizId: number, dto: UpdateQuizDto) {
+    const quiz = await this.getQuizOrThrow(quizId);
 
-    await this.ensureCanManageQuiz(
-      user,
-      quiz.created_by_user_id,
-    );
+    await this.ensureCanManageQuiz(user, quiz.created_by_user_id);
 
-    this.ensureQuizIsDraft(
-      quiz.quiz_state,
-    );
+    this.ensureQuizIsDraft(quiz.quiz_state);
 
     return this.prisma.quizzes.update({
       where: {
@@ -253,31 +216,18 @@ export class QuizzesService {
       },
       data: {
         title: dto.title,
-        description:
-          dto.description,
-        max_attempts:
-          dto.maxAttempts,
+        description: dto.description,
+        max_attempts: dto.maxAttempts,
       },
     });
   }
 
-  async remove(
-    user: AccessTokenPayload,
-    quizId: number,
-  ) {
-    const quiz =
-      await this.getQuizOrThrow(
-        quizId,
-      );
+  async remove(user: AccessTokenPayload, quizId: number) {
+    const quiz = await this.getQuizOrThrow(quizId);
 
-    await this.ensureCanManageQuiz(
-      user,
-      quiz.created_by_user_id,
-    );
+    await this.ensureCanManageQuiz(user, quiz.created_by_user_id);
 
-    this.ensureQuizIsDraft(
-      quiz.quiz_state,
-    );
+    this.ensureQuizIsDraft(quiz.quiz_state);
 
     await this.prisma.quizzes.update({
       where: {
@@ -293,99 +243,67 @@ export class QuizzesService {
     };
   }
 
-  async getQuizOrThrow(
-    quizId: number,
-  ) {
-    const quiz =
-      await this.prisma.quizzes.findFirst({
-        where: {
-          id: quizId,
-          status: 'A',
-        },
-      });
+  async getQuizOrThrow(quizId: number) {
+    const quiz = await this.prisma.quizzes.findFirst({
+      where: {
+        id: quizId,
+        status: 'A',
+      },
+    });
 
     if (!quiz) {
-      throw new NotFoundException(
-        'Quiz não encontrado.',
-      );
+      throw new NotFoundException('Quiz não encontrado.');
     }
 
     return quiz;
   }
 
-  async ensureCanCreateQuiz(
-    user: AccessTokenPayload,
-  ) {
+  async ensureCanCreateQuiz(user: AccessTokenPayload) {
     if (user.isSystemAdmin) {
       return;
     }
 
-    const account =
-      await this.prisma.users.findUnique({
-        where: {
-          id: user.sub,
-        },
-        select: {
-          status: true,
-          person: {
-            select: {
-              status: true,
-              role: true,
-            },
+    const account = await this.prisma.users.findUnique({
+      where: {
+        id: user.sub,
+      },
+      select: {
+        status: true,
+        person: {
+          select: {
+            status: true,
+            role: true,
           },
         },
-      });
+      },
+    });
 
-    if (
-      !account ||
-      account.status !== 'A' ||
-      account.person.status !== 'A'
-    ) {
-      throw new ForbiddenException(
-        'Usuário sem permissão para criar quizzes.',
-      );
+    if (!account || account.status !== 'A' || account.person.status !== 'A') {
+      throw new ForbiddenException('Usuário sem permissão para criar quizzes.');
     }
 
-    const allowedRoles = [
-      'MINISTRY',
-      'ASSISTANT',
-    ];
+    const allowedRoles = ['MINISTRY', 'ASSISTANT'];
 
-    if (
-      !allowedRoles.includes(
-        account.person.role,
-      )
-    ) {
-      throw new ForbiddenException(
-        'Usuário sem permissão para criar quizzes.',
-      );
+    if (!allowedRoles.includes(account.person.role)) {
+      throw new ForbiddenException('Usuário sem permissão para criar quizzes.');
     }
   }
 
-  async ensureCanManageQuiz(
-    user: AccessTokenPayload,
-    createdByUserId: number,
-  ) {
+  async ensureCanManageQuiz(user: AccessTokenPayload, createdByUserId: number) {
     if (user.isSystemAdmin) {
       return;
     }
 
-    if (
-      user.sub !== createdByUserId
-    ) {
+    if (user.sub !== createdByUserId) {
       throw new ForbiddenException(
         'Usuário sem permissão para alterar este quiz.',
       );
     }
 
-    await this.ensureCanCreateQuiz(
-      user,
-    );
+    await this.ensureCanCreateQuiz(user);
   }
 
-  ensureQuizIsDraft(
-    quizState: string,
-  ) {
+  ensureQuizIsDraft(quizState: string) {
     if (quizState !== 'DRAFT') {
       throw new BadRequestException(
         'O quiz só pode ser alterado enquanto estiver em rascunho.',
