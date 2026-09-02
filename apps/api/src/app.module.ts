@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { PeopleUsersModule } from './people-users/people-users.module';
 import { PostsMediaModule } from './posts-media/posts-media.module';
 import { QuizzesRankingModule } from './quizzes-ranking/quizzes-ranking.module';
+import { RecitativesModule } from './recitatives/recitatives.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { QuizzesRankingModule } from './quizzes-ranking/quizzes-ranking.module';
     PeopleUsersModule,
     PostsMediaModule,
     QuizzesRankingModule,
+    RecitativesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
