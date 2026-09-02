@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PeopleUsersModule } from './people-users/people-users.module';
 import { PostsMediaModule } from './posts-media/posts-media.module';
+import { QuizzesRankingModule } from './quizzes-ranking/quizzes-ranking.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PostsMediaModule } from './posts-media/posts-media.module';
     AuthModule,
     PeopleUsersModule,
     PostsMediaModule,
+    QuizzesRankingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
