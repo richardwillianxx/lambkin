@@ -8,6 +8,7 @@ import { PeopleUsersModule } from './people-users/people-users.module';
 import { PostsMediaModule } from './posts-media/posts-media.module';
 import { QuizzesRankingModule } from './quizzes-ranking/quizzes-ranking.module';
 import { RecitativesModule } from './recitatives/recitatives.module';
+import { AdminAuditModule } from './admin-audit/admin-audit.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RecitativesModule } from './recitatives/recitatives.module';
     PostsMediaModule,
     QuizzesRankingModule,
     RecitativesModule,
+    AdminAuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
