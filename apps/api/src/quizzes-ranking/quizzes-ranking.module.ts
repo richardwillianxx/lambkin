@@ -6,16 +6,8 @@ import { QuizzesController } from './quizzes.controller';
 import { QuizzesService } from './quizzes.service';
 
 @Module({
-  imports: [
-    AuthModule,
-  ],
-  controllers: [
-    QuizzesController,
-  ],
-  providers: [
-    QuizzesService,
-    QuizStructureService,
-    QuizAttemptsService,
-  ],
+  imports: [AuthModule],
+  controllers: [QuizzesController],
+  providers: [QuizzesService, QuizStructureService, QuizAttemptsService],
 })
 export class QuizzesRankingModule {}

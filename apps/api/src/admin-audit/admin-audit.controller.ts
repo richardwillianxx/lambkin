@@ -15,10 +15,7 @@ import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 @Controller('admin/audit-logs')
 @UseGuards(JwtAuthGuard)
 export class AdminAuditController {
-  constructor(
-    private readonly auditService:
-      AuditService,
-  ) {}
+  constructor(private readonly auditService: AuditService) {}
 
   @Get()
   findAll(
@@ -27,25 +24,16 @@ export class AdminAuditController {
     @Query()
     query: AuditLogQueryDto,
   ) {
-    return this.auditService.findAll(
-      user,
-      query,
-    );
+    return this.auditService.findAll(user, query);
   }
 
   @Get(':id')
   findOne(
     @CurrentUser()
     user: AccessTokenPayload,
-    @Param(
-      'id',
-      ParseIntPipe,
-    )
+    @Param('id', ParseIntPipe)
     auditLogId: number,
   ) {
-    return this.auditService.findOne(
-      user,
-      auditLogId,
-    );
+    return this.auditService.findOne(user, auditLogId);
   }
 }

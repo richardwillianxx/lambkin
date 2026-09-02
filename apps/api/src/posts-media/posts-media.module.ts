@@ -6,16 +6,8 @@ import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 
 @Module({
-  imports: [
-    AuthModule,
-  ],
-  controllers: [
-    PostsController,
-    ImageAuthorizationController,
-  ],
-  providers: [
-    PostsService,
-    ImageAuthorizationService,
-  ],
+  imports: [AuthModule],
+  controllers: [PostsController, ImageAuthorizationController],
+  providers: [PostsService, ImageAuthorizationService],
 })
 export class PostsMediaModule {}

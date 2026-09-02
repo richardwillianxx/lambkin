@@ -151,9 +151,7 @@ export class PeopleService {
         );
       }
 
-      const guardianIds = guardianLinks.map(
-        (link) => link.guardian_person_id,
-      );
+      const guardianIds = guardianLinks.map((link) => link.guardian_person_id);
 
       const guardianAccounts = await this.prisma.users.findMany({
         where: {

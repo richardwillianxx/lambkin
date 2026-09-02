@@ -6,80 +6,49 @@ import {
 } from '@nestjs/common';
 import type { AccessTokenPayload } from '../auth/auth.types';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateRecitativeDto,
-  UpdateRecitativeDto,
-} from './dto/recitative.dto';
+import { CreateRecitativeDto, UpdateRecitativeDto } from './dto/recitative.dto';
 
 @Injectable()
 export class RecitativesService {
-  constructor(
-    private readonly prisma:
-      PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    user: AccessTokenPayload,
-    dto: CreateRecitativeDto,
-  ) {
-    const congregationId =
-      await this.resolveCongregationForCreate(
-        user,
-        dto.congregationId,
-      );
+  async create(user: AccessTokenPayload, dto: CreateRecitativeDto) {
+    const congregationId = await this.resolveCongregationForCreate(
+      user,
+      dto.congregationId,
+    );
 
-    const recitativeDate =
-      this.parseDate(
-        dto.recitativeDate,
-      );
+    const recitativeDate = this.parseDate(dto.recitativeDate);
 
     return this.prisma.recitatives.create({
       data: {
         name: dto.name,
-        group_number:
-          dto.groupNumber,
-        bible_book:
-          dto.bibleBook,
-        bible_chapter:
-          dto.bibleChapter,
-        bible_verse:
-          dto.bibleVerse,
-        gender:
-          dto.gender,
-        congregation_id:
-          congregationId,
-        created_by_user_id:
-          user.sub,
-        recitative_date:
-          recitativeDate,
-        after_text:
-          dto.afterText ?? null,
-        reciters_count:
-          dto.recitersCount ?? null,
+        group_number: dto.groupNumber,
+        bible_book: dto.bibleBook,
+        bible_chapter: dto.bibleChapter,
+        bible_verse: dto.bibleVerse,
+        gender: dto.gender,
+        congregation_id: congregationId,
+        created_by_user_id: user.sub,
+        recitative_date: recitativeDate,
+        after_text: dto.afterText ?? null,
+        reciters_count: dto.recitersCount ?? null,
         status: 'A',
       },
     });
   }
 
-  async findAll(
-    user: AccessTokenPayload,
-  ) {
-    const congregationId =
-      await this.getViewCongregation(
-        user,
-      );
+  async findAll(user: AccessTokenPayload) {
+    const congregationId = await this.getViewCongregation(user);
 
     return this.prisma.recitatives.findMany({
       where: {
         status: 'A',
-        ...(
-          congregationId !== null
-            ? {
-                congregation_id:
-                  congregationId,
-              }
-            : {}
-        ),
+        ...(congregationId !== null
+          ? {
+              congregation_id: congregationId,
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -119,8 +88,7 @@ export class RecitativesService {
       },
       orderBy: [
         {
-          recitative_date:
-            'desc',
+          recitative_date: 'desc',
         },
         {
           id: 'desc',
@@ -129,19 +97,10 @@ export class RecitativesService {
     });
   }
 
-  async findOne(
-    user: AccessTokenPayload,
-    recitativeId: number,
-  ) {
-    const recitative =
-      await this.getRecitativeOrThrow(
-        recitativeId,
-      );
+  async findOne(user: AccessTokenPayload, recitativeId: number) {
+    const recitative = await this.getRecitativeOrThrow(recitativeId);
 
-    await this.ensureCanView(
-      user,
-      recitative.congregation_id,
-    );
+    await this.ensureCanView(user, recitative.congregation_id);
 
     return this.prisma.recitatives.findUnique({
       where: {
@@ -191,61 +150,35 @@ export class RecitativesService {
     recitativeId: number,
     dto: UpdateRecitativeDto,
   ) {
-    const recitative =
-      await this.getRecitativeOrThrow(
-        recitativeId,
-      );
+    const recitative = await this.getRecitativeOrThrow(recitativeId);
 
-    this.ensureCanManage(
-      user,
-      recitative.created_by_user_id,
-    );
+    this.ensureCanManage(user, recitative.created_by_user_id);
 
     return this.prisma.recitatives.update({
       where: {
         id: recitativeId,
       },
       data: {
-        name:
-          dto.name,
-        group_number:
-          dto.groupNumber,
-        bible_book:
-          dto.bibleBook,
-        bible_chapter:
-          dto.bibleChapter,
-        bible_verse:
-          dto.bibleVerse,
-        gender:
-          dto.gender,
+        name: dto.name,
+        group_number: dto.groupNumber,
+        bible_book: dto.bibleBook,
+        bible_chapter: dto.bibleChapter,
+        bible_verse: dto.bibleVerse,
+        gender: dto.gender,
         recitative_date:
-          dto.recitativeDate !==
-          undefined
-            ? this.parseDate(
-                dto.recitativeDate,
-              )
+          dto.recitativeDate !== undefined
+            ? this.parseDate(dto.recitativeDate)
             : undefined,
-        after_text:
-          dto.afterText,
-        reciters_count:
-          dto.recitersCount,
+        after_text: dto.afterText,
+        reciters_count: dto.recitersCount,
       },
     });
   }
 
-  async remove(
-    user: AccessTokenPayload,
-    recitativeId: number,
-  ) {
-    const recitative =
-      await this.getRecitativeOrThrow(
-        recitativeId,
-      );
+  async remove(user: AccessTokenPayload, recitativeId: number) {
+    const recitative = await this.getRecitativeOrThrow(recitativeId);
 
-    this.ensureCanManage(
-      user,
-      recitative.created_by_user_id,
-    );
+    this.ensureCanManage(user, recitative.created_by_user_id);
 
     await this.prisma.recitatives.update({
       where: {
@@ -257,26 +190,20 @@ export class RecitativesService {
     });
 
     return {
-      message:
-        'Recitativo removido.',
+      message: 'Recitativo removido.',
     };
   }
 
-  private async getRecitativeOrThrow(
-    recitativeId: number,
-  ) {
-    const recitative =
-      await this.prisma.recitatives.findFirst({
-        where: {
-          id: recitativeId,
-          status: 'A',
-        },
-      });
+  private async getRecitativeOrThrow(recitativeId: number) {
+    const recitative = await this.prisma.recitatives.findFirst({
+      where: {
+        id: recitativeId,
+        status: 'A',
+      },
+    });
 
     if (!recitative) {
-      throw new NotFoundException(
-        'Recitativo não encontrado.',
-      );
+      throw new NotFoundException('Recitativo não encontrado.');
     }
 
     return recitative;
@@ -287,38 +214,26 @@ export class RecitativesService {
     requestedCongregationId?: number,
   ) {
     if (user.isSystemAdmin) {
-      if (
-        requestedCongregationId ===
-        undefined
-      ) {
+      if (requestedCongregationId === undefined) {
         throw new BadRequestException(
           'System Admin deve informar congregationId.',
         );
       }
 
-      await this.ensureActiveCongregation(
-        requestedCongregationId,
-      );
+      await this.ensureActiveCongregation(requestedCongregationId);
 
       return requestedCongregationId;
     }
 
-    const account =
-      await this.getActiveAccount(
-        user.sub,
-      );
+    const account = await this.getActiveAccount(user.sub);
 
-    if (
-      account.person.role !==
-      'ASSISTANT'
-    ) {
+    if (account.person.role !== 'ASSISTANT') {
       throw new ForbiddenException(
         'Usuário sem permissão para cadastrar recitativos.',
       );
     }
 
-    const congregationId =
-      account.person.congregation_id;
+    const congregationId = account.person.congregation_id;
 
     if (!congregationId) {
       throw new BadRequestException(
@@ -326,15 +241,11 @@ export class RecitativesService {
       );
     }
 
-    await this.ensureActiveCongregation(
-      congregationId,
-    );
+    await this.ensureActiveCongregation(congregationId);
 
     if (
-      requestedCongregationId !==
-        undefined &&
-      requestedCongregationId !==
-        congregationId
+      requestedCongregationId !== undefined &&
+      requestedCongregationId !== congregationId
     ) {
       throw new ForbiddenException(
         'Usuário não pode cadastrar recitativos para outra congregação.',
@@ -344,20 +255,14 @@ export class RecitativesService {
     return congregationId;
   }
 
-  private async getViewCongregation(
-    user: AccessTokenPayload,
-  ) {
+  private async getViewCongregation(user: AccessTokenPayload) {
     if (user.isSystemAdmin) {
       return null;
     }
 
-    const account =
-      await this.getActiveAccount(
-        user.sub,
-      );
+    const account = await this.getActiveAccount(user.sub);
 
-    const congregationId =
-      account.person.congregation_id;
+    const congregationId = account.person.congregation_id;
 
     if (!congregationId) {
       throw new BadRequestException(
@@ -376,126 +281,80 @@ export class RecitativesService {
       return;
     }
 
-    const account =
-      await this.getActiveAccount(
-        user.sub,
-      );
+    const account = await this.getActiveAccount(user.sub);
 
-    if (
-      account.person.congregation_id !==
-      congregationId
-    ) {
+    if (account.person.congregation_id !== congregationId) {
       throw new ForbiddenException(
         'Usuário sem permissão para consultar este recitativo.',
       );
     }
   }
 
-  private ensureCanManage(
-    user: AccessTokenPayload,
-    createdByUserId: number,
-  ) {
+  private ensureCanManage(user: AccessTokenPayload, createdByUserId: number) {
     if (user.isSystemAdmin) {
       return;
     }
 
-    if (
-      user.sub !==
-      createdByUserId
-    ) {
+    if (user.sub !== createdByUserId) {
       throw new ForbiddenException(
         'Usuário sem permissão para alterar este recitativo.',
       );
     }
   }
 
-  private async getActiveAccount(
-    userId: number,
-  ) {
-    const account =
-      await this.prisma.users.findUnique({
-        where: {
-          id: userId,
-        },
-        select: {
-          status: true,
-          person: {
-            select: {
-              status: true,
-              role: true,
-              congregation_id: true,
-            },
+  private async getActiveAccount(userId: number) {
+    const account = await this.prisma.users.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        status: true,
+        person: {
+          select: {
+            status: true,
+            role: true,
+            congregation_id: true,
           },
         },
-      });
+      },
+    });
 
-    if (
-      !account ||
-      account.status !== 'A' ||
-      account.person.status !== 'A'
-    ) {
-      throw new ForbiddenException(
-        'Usuário inválido ou inativo.',
-      );
+    if (!account || account.status !== 'A' || account.person.status !== 'A') {
+      throw new ForbiddenException('Usuário inválido ou inativo.');
     }
 
     return account;
   }
 
-  private async ensureActiveCongregation(
-    congregationId: number,
-  ) {
-    const congregation =
-      await this.prisma.congregations.findUnique({
-        where: {
-          id: congregationId,
-        },
-      });
+  private async ensureActiveCongregation(congregationId: number) {
+    const congregation = await this.prisma.congregations.findUnique({
+      where: {
+        id: congregationId,
+      },
+    });
 
-    if (
-      !congregation ||
-      congregation.status !== 'A'
-    ) {
-      throw new BadRequestException(
-        'Congregação inválida ou inativa.',
-      );
+    if (!congregation || congregation.status !== 'A') {
+      throw new BadRequestException('Congregação inválida ou inativa.');
     }
   }
 
-  private parseDate(
-    value: string,
-  ) {
-    const parts =
-      value.split('-');
+  private parseDate(value: string) {
+    const parts = value.split('-');
 
-    const year =
-      Number(parts[0]);
+    const year = Number(parts[0]);
 
-    const month =
-      Number(parts[1]);
+    const month = Number(parts[1]);
 
-    const day =
-      Number(parts[2]);
+    const day = Number(parts[2]);
 
-    const date =
-      new Date(
-        Date.UTC(
-          year,
-          month - 1,
-          day,
-        ),
-      );
+    const date = new Date(Date.UTC(year, month - 1, day));
 
     if (
-      date.getUTCFullYear() !==
-        year ||
-      date.getUTCMonth() !==
-        month - 1 ||
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() !== month - 1 ||
       date.getUTCDate() !== day
     ) {
-      throw new BadRequestException(
-        'Data do recitativo inválida.',
-      );
+      throw new BadRequestException('Data do recitativo inválida.');
     }
 
     return date;

@@ -4,14 +4,8 @@ import { RecitativesController } from './recitatives.controller';
 import { RecitativesService } from './recitatives.service';
 
 @Module({
-  imports: [
-    AuthModule,
-  ],
-  controllers: [
-    RecitativesController,
-  ],
-  providers: [
-    RecitativesService,
-  ],
+  imports: [AuthModule],
+  controllers: [RecitativesController],
+  providers: [RecitativesService],
 })
 export class RecitativesModule {}

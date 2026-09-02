@@ -14,22 +14,14 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { AccessTokenPayload } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LinkGuardianDto } from './dto/guardian.dto';
-import {
-  CreatePersonDto,
-  UpdatePersonDto,
-} from './dto/person.dto';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-} from './dto/user.dto';
+import { CreatePersonDto, UpdatePersonDto } from './dto/person.dto';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { PeopleService } from './people.service';
 
 @Controller('people')
 @UseGuards(JwtAuthGuard)
 export class PeopleController {
-  constructor(
-    private readonly peopleService: PeopleService,
-  ) { }
+  constructor(private readonly peopleService: PeopleService) {}
 
   @Post()
   create(
@@ -47,9 +39,7 @@ export class PeopleController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.peopleService.findOne(id);
   }
 
@@ -61,10 +51,7 @@ export class PeopleController {
   ) {
     this.ensureSystemAdmin(user);
 
-    return this.peopleService.updatePerson(
-      id,
-      dto,
-    );
+    return this.peopleService.updatePerson(id, dto);
   }
 
   @Post(':id/account')
@@ -75,10 +62,7 @@ export class PeopleController {
   ) {
     this.ensureSystemAdmin(user);
 
-    return this.peopleService.createAccount(
-      id,
-      dto,
-    );
+    return this.peopleService.createAccount(id, dto);
   }
 
   @Patch(':id/account')
@@ -89,10 +73,7 @@ export class PeopleController {
   ) {
     this.ensureSystemAdmin(user);
 
-    return this.peopleService.updateAccount(
-      id,
-      dto,
-    );
+    return this.peopleService.updateAccount(id, dto);
   }
 
   @Post(':id/guardians')
@@ -103,10 +84,7 @@ export class PeopleController {
   ) {
     this.ensureSystemAdmin(user);
 
-    return this.peopleService.linkGuardian(
-      id,
-      dto,
-    );
+    return this.peopleService.linkGuardian(id, dto);
   }
 
   @Delete(':id/guardians/:guardianId')
@@ -114,23 +92,15 @@ export class PeopleController {
     @CurrentUser() user: AccessTokenPayload,
     @Param('id', ParseIntPipe)
     id: number,
-    @Param(
-      'guardianId',
-      ParseIntPipe,
-    )
+    @Param('guardianId', ParseIntPipe)
     guardianId: number,
   ) {
     this.ensureSystemAdmin(user);
 
-    return this.peopleService.unlinkGuardian(
-      id,
-      guardianId,
-    );
+    return this.peopleService.unlinkGuardian(id, guardianId);
   }
 
-  private ensureSystemAdmin(
-    user: AccessTokenPayload,
-  ) {
+  private ensureSystemAdmin(user: AccessTokenPayload) {
     if (!user.isSystemAdmin) {
       throw new ForbiddenException(
         'Acesso permitido somente para administrador.',

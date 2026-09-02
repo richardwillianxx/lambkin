@@ -15,23 +15,13 @@ export class JwtAuthGuard implements CanActivate {
     private readonly prisma: PrismaService,
   ) {}
 
-  async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest();
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
 
-    const authorization =
-      request.headers.authorization;
+    const authorization = request.headers.authorization;
 
-    if (
-      !authorization ||
-      !authorization.startsWith('Bearer ')
-    ) {
-      throw new UnauthorizedException(
-        'Token de acesso não informado.',
-      );
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Token de acesso não informado.');
     }
 
     const token = authorization.substring(7);
@@ -39,29 +29,23 @@ export class JwtAuthGuard implements CanActivate {
     let payload: AccessTokenPayload;
 
     try {
-      payload =
-        await this.jwtService.verifyAsync<AccessTokenPayload>(
-          token,
-        );
+      payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token);
     } catch {
-      throw new UnauthorizedException(
-        'Token de acesso inválido ou expirado.',
-      );
+      throw new UnauthorizedException('Token de acesso inválido ou expirado.');
     }
 
-    const session =
-      await this.prisma.user_sessions.findUnique({
-        where: {
-          id: payload.sessionId,
-        },
-        include: {
-          users: {
-            include: {
-              person: true,
-            },
+    const session = await this.prisma.user_sessions.findUnique({
+      where: {
+        id: payload.sessionId,
+      },
+      include: {
+        users: {
+          include: {
+            person: true,
           },
         },
-      });
+      },
+    });
 
     if (
       !session ||
@@ -71,9 +55,7 @@ export class JwtAuthGuard implements CanActivate {
       session.users.status !== 'A' ||
       session.users.person.status !== 'A'
     ) {
-      throw new UnauthorizedException(
-        'Sessão inválida ou expirada.',
-      );
+      throw new UnauthorizedException('Sessão inválida ou expirada.');
     }
 
     request.user = payload;
