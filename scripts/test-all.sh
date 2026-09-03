@@ -41,6 +41,10 @@ run_test \
   "POSTS / MEDIA"
 
 run_test \
+  "test-media-s3.sh" \
+  "MEDIA / AWS S3"
+
+run_test \
   "test-quizzes-ranking.sh" \
   "QUIZZES / RANKING"
 

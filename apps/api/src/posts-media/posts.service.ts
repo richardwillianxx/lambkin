@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { AccessTokenPayload } from '../auth/auth.types';
 import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
 import { ReactToPostDto } from './dto/reaction.dto';
+import { AttachMediaDto } from './dto/media.dto';
 
 @Injectable()
 export class PostsService {
@@ -244,6 +245,106 @@ export class PostsService {
 
     return {
       message: 'Reação removida.',
+    };
+  }
+  async attachMedia(
+    user: AccessTokenPayload,
+    postId: number,
+    dto: AttachMediaDto,
+  ) {
+    const post = await this.ensurePostExists(postId);
+
+    this.ensureCanManagePost(user, post.author_user_id);
+
+    const media = await this.prisma.media.findFirst({
+      where: {
+        id: dto.mediaId,
+        status: 'A',
+      },
+    });
+
+    if (!media) {
+      throw new NotFoundException('Mídia não encontrada.');
+    }
+
+    if (media.uploaded_by_user_id !== user.sub && !user.isSystemAdmin) {
+      throw new ForbiddenException(
+        'Usuário não pode associar mídia de outro usuário.',
+      );
+    }
+
+    const occupiedPosition = await this.prisma.post_media.findFirst({
+      where: {
+        post_id: postId,
+        position: dto.position,
+        status: 'A',
+      },
+    });
+
+    if (occupiedPosition && occupiedPosition.media_id !== dto.mediaId) {
+      throw new BadRequestException('Já existe uma mídia nesta posição.');
+    }
+
+    const existing = await this.prisma.post_media.findUnique({
+      where: {
+        post_id_media_id: {
+          post_id: postId,
+          media_id: dto.mediaId,
+        },
+      },
+    });
+
+    if (existing) {
+      return this.prisma.post_media.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          position: dto.position,
+          status: 'A',
+        },
+      });
+    }
+
+    return this.prisma.post_media.create({
+      data: {
+        post_id: postId,
+        media_id: dto.mediaId,
+        position: dto.position,
+        status: 'A',
+      },
+    });
+  }
+
+  async detachMedia(user: AccessTokenPayload, postId: number, mediaId: number) {
+    const post = await this.ensurePostExists(postId);
+
+    this.ensureCanManagePost(user, post.author_user_id);
+
+    const relation = await this.prisma.post_media.findUnique({
+      where: {
+        post_id_media_id: {
+          post_id: postId,
+          media_id: mediaId,
+        },
+      },
+    });
+
+    if (!relation || relation.status !== 'A') {
+      throw new NotFoundException('Mídia não está associada à publicação.');
+    }
+
+    await this.prisma.post_media.update({
+      where: {
+        id: relation.id,
+      },
+      data: {
+        status: 'I',
+      },
+    });
+
+    return {
+      message: 'Mídia removida da publicação.',
     };
   }
 

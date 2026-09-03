@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
 import { ReactToPostDto } from './dto/reaction.dto';
 import { PostsService } from './posts.service';
+import { AttachMediaDto } from './dto/media.dto';
 
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
@@ -68,5 +69,29 @@ export class PostsController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.postsService.removeReaction(user, id);
+  }
+
+  @Post(':id/media')
+  attachMedia(
+    @CurrentUser()
+    user: AccessTokenPayload,
+    @Param('id', ParseIntPipe)
+    postId: number,
+    @Body()
+    dto: AttachMediaDto,
+  ) {
+    return this.postsService.attachMedia(user, postId, dto);
+  }
+
+  @Delete(':id/media/:mediaId')
+  detachMedia(
+    @CurrentUser()
+    user: AccessTokenPayload,
+    @Param('id', ParseIntPipe)
+    postId: number,
+    @Param('mediaId', ParseIntPipe)
+    mediaId: number,
+  ) {
+    return this.postsService.detachMedia(user, postId, mediaId);
   }
 }
